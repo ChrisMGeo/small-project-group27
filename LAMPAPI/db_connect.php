@@ -1,10 +1,7 @@
 <?php
-	$host = "localhost";
-	$username = "TheBeast";
-	$password = "WeLoveCOP4331";
-	$database = "COP4331";
-
-	$conn = new mysqli($host, $username, $password, $database);
+	// Environment variables are loaded automatically by utils.php
+	
+	$conn = new mysqli(getenv('DB_HOST'), getenv('DB_USERNAME'), getenv('DB_PASSWORD'), getenv('DB_NAME'));
 
 	if ($conn->connect_error) {
 		returnWithError($conn->connect_error);
