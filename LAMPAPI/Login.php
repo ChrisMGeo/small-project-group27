@@ -2,6 +2,8 @@
 	require_once 'utils.php';
 	require_once 'db_connect.php';
 
+	session_start();
+
 	$inData = getRequestInfo();
 
 	$id = 0;
@@ -15,6 +17,7 @@
 
 	if( $row = $result->fetch_assoc()  )
 	{
+		$_SESSION['userId'] = $row['ID'];
 		$data = [
 			"id" => $row['ID'],
 			"firstName" => $row['FirstName'],

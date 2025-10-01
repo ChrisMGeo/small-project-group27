@@ -2,6 +2,14 @@
 	require_once 'utils.php';
 	require_once 'db_connect.php';
 
+	session_start();
+	if (!isset($_SESSION['userId'])) {
+		http_response_code(401);
+		error_log("Unauthorized access attempt to SearchContacts from IP: " . $_SERVER['REMOTE_ADDR']);
+		returnWithError("Unauthorized access");
+		exit;
+	}
+
 	$inData = getRequestInfo();
 
 	$searchResults = [];
@@ -9,7 +17,7 @@
 
 	$stmt = $conn->prepare("SELECT FirstName, LastName, Phone, Email, UserID, ID FROM Contacts WHERE (FirstName like ? OR LastName like?) AND UserID=?");
 	$searchTerm = "%" . $inData["search"] . "%";
-	$stmt->bind_param("sss", $searchTerm, $searchTerm, $inData["userId"]);
+	$stmt->bind_param("ssi", $searchTerm, $searchTerm, $_SESSION['userId']);
 	$stmt->execute();
 
 	$result = $stmt->get_result();

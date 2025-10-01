@@ -173,13 +173,39 @@ function readCookie() {
     }
 }
 
-function doLogout() {
+function clearAuth() {
     userId = 0;
     firstName = "";
     lastName = "";
-
     document.cookie = "firstName= ; expires = Thu, 01 Jan 1970 00:00:00 GMT";
     window.location.href = "index.html";
+}
+
+function doLogout() {
+    let url = urlBase + '/Logout.' + extension;
+
+    let xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Content-type", "application/json; charset=UTF-8");
+
+    try {
+        xhr.onreadystatechange = function () {
+            if (this.readyState != 4) return;
+
+            if (this.status == 200) {
+                console.log("Logged out successfully from server");
+            } else {
+                console.log("Logout response: " + this.status);
+            }
+
+            clearAuth();
+        };
+        let jsonPayload = JSON.stringify({}); // Empty payload for logout
+        xhr.send(jsonPayload);
+    } catch (err) {
+        console.log("Logout error: " + err.message);
+        clearAuth();
+    }
 }
 
 function showTable() {
@@ -227,14 +253,24 @@ function addContact() {
     xhr.setRequestHeader("Content-type", "application/json; charset=UTF-8");
     try {
         xhr.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                console.log("Contact has been added");
-                // Clear input fields in form 
-                document.getElementById("addMe").reset();
-                // reload contacts table and switch view to show
-                loadContacts();
-                showTable();
+            if (this.readyState != 4) return;
+
+            if (this.status != 200) {
+                if (this.status == 401) {
+                    console.log("Unauthorized - session expired, redirecting to login");
+                    clearAuth();
+                } else {
+                    console.log("Add contact failed with status: " + this.status);
+                }
+                return;
             }
+
+            console.log("Contact has been added");
+            // Clear input fields in form
+            document.getElementById("addMe").reset();
+            // reload contacts table and switch view to show
+            loadContacts();
+            showTable();
         };
         xhr.send(jsonPayload);
     } catch (err) {
@@ -257,50 +293,60 @@ function loadContacts() {
 
     try {
         xhr.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                let jsonObject = JSON.parse(xhr.responseText);
-                if (jsonObject.error) {
-                    console.log(jsonObject.error);
-                    return;
-                }
-                // let text = "<table border='1'>"
-                // for (let i = 0; i < jsonObject.results.length; i++) {
-                //     ids[i] = jsonObject.results[i].ID
-                //     text += "<tr id='row" + i + "'>"
-                //     text += "<td id='first_Name" + i + "'><span>" + jsonObject.results[i].FirstName + "</span></td>";
-                //     text += "<td id='last_Name" + i + "'><span>" + jsonObject.results[i].LastName + "</span></td>";
-                //     text += "<td id='email" + i + "'><span>" + jsonObject.results[i].Email + "</span></td>";
-                //     text += "<td id='phone" + i + "'><span>" + jsonObject.results[i].Phone + "</span></td>";
-                //     text += "<td>" +
-                //          "<button type='button' id='edit_button" + i + "' class='btn-edit' onclick='edit_row(" + i + ")'><i class='fa-solid fa-pencil'></i></button>"+
-                //         "<button type='button' id='save_button" + i + "' class='btn-save' onclick='save_row(" + i + ")' style='display: none'><i class='fa-solid fa-check'></i></button>" +
-                //         "<button type='button' id='delete_button" + i + "' class='btn-delete' onclick='delete_row(" + i + ")'><i class='fa-solid fa-trash-can'></i></button>";
-                //     text += "</tr>"
-                // }
-                // text += "</table>"
-                let text = ""; // We'll add blocks instead of table rows
-                for (let i = 0; i < jsonObject.results.length; i++) {
-                    ids[i] = jsonObject.results[i].ID;
+            if (this.readyState != 4) return;
 
-                    text += "<div class='contact__item' id='block" + i + "'>";
-                        text += "<div class='first__rows'>";
-                            text += "<div class='first-rows__name'>";
-                                text += "<span id='first_Name" + i + "'>" + jsonObject.results[i].FirstName + "</span>";
-                                text += "<span id='last_Name" + i + "'>" + jsonObject.results[i].LastName + "</span>";
-                            text += "</div>";
-                            text += "<div class='first-rows__btn'>";
-                                text += "<button type='button' id='edit_button" + i + "' class='btn-edit' onclick='edit_row(" + i + ")'>Edit</button>";
-                                text += "<button type='button' id='save_button" + i + "' class='btn-save' onclick='save_row(" + i + ")' style='display: none'>Save</button>";
-                                text += "<button type='button' id='delete_button" + i + "' class='btn-delete' onclick='delete_row(" + i + ")'>Delete</button>";
-                            text += "</div>";
-                        text += "</div>";
-
-                        text += "<p class='contacts__phone'><span id='phone" + i + "'>" + jsonObject.results[i].Phone + "</span></p>";
-                        text += "<p class='contacts__email'><span id='email" + i + "'>" + jsonObject.results[i].Email + "</span></p>";
-                    text += "</div>"; // End contact block
+            if (this.status != 200) {
+                if (this.status == 401) {
+                    console.log("Unauthorized - session expired, redirecting to login");
+                    clearAuth();
+                } else {
+                    console.log("Load contacts failed with status: " + this.status);
                 }
-                document.getElementById("contacts__list").innerHTML = text;
+                return;
             }
+
+            let jsonObject = JSON.parse(xhr.responseText);
+            if (jsonObject.error) {
+                console.log(jsonObject.error);
+                return;
+            }
+            // let text = "<table border='1'>"
+            // for (let i = 0; i < jsonObject.results.length; i++) {
+            //     ids[i] = jsonObject.results[i].ID
+            //     text += "<tr id='row" + i + "'>"
+            //     text += "<td id='first_Name" + i + "'><span>" + jsonObject.results[i].FirstName + "</span></td>";
+            //     text += "<td id='last_Name" + i + "'><span>" + jsonObject.results[i].LastName + "</span></td>";
+            //     text += "<td id='email" + i + "'><span>" + jsonObject.results[i].Email + "</span></td>";
+            //     text += "<td id='phone" + i + "'><span>" + jsonObject.results[i].Phone + "</span></td>";
+            //     text += "<td>" +
+            //          "<button type='button' id='edit_button" + i + "' class='btn-edit' onclick='edit_row(" + i + ")'><i class='fa-solid fa-pencil'></i></button>"+
+            //         "<button type='button' id='save_button" + i + "' class='btn-save' onclick='save_row(" + i + ")' style='display: none'><i class='fa-solid fa-check'></i></button>" +
+            //         "<button type='button' id='delete_button" + i + "' class='btn-delete' onclick='delete_row(" + i + ")'><i class='fa-solid fa-trash-can'></i></button>";
+            //     text += "</tr>"
+            // }
+            // text += "</table>"
+            let text = ""; // We'll add blocks instead of table rows
+            for (let i = 0; i < jsonObject.results.length; i++) {
+                ids[i] = jsonObject.results[i].ID;
+
+                text += "<div class='contact__item' id='block" + i + "'>";
+                    text += "<div class='first__rows'>";
+                        text += "<div class='first-rows__name'>";
+                            text += "<span id='first_Name" + i + "'>" + jsonObject.results[i].FirstName + "</span>";
+                            text += "<span id='last_Name" + i + "'>" + jsonObject.results[i].LastName + "</span>";
+                        text += "</div>";
+                        text += "<div class='first-rows__btn'>";
+                            text += "<button type='button' id='edit_button" + i + "' class='btn-edit' onclick='edit_row(" + i + ")'>Edit</button>";
+                            text += "<button type='button' id='save_button" + i + "' class='btn-save' onclick='save_row(" + i + ")' style='display: none'>Save</button>";
+                            text += "<button type='button' id='delete_button" + i + "' class='btn-delete' onclick='delete_row(" + i + ")'>Delete</button>";
+                        text += "</div>";
+                    text += "</div>";
+
+                    text += "<p class='contacts__phone'><span id='phone" + i + "'>" + jsonObject.results[i].Phone + "</span></p>";
+                    text += "<p class='contacts__email'><span id='email" + i + "'>" + jsonObject.results[i].Email + "</span></p>";
+                text += "</div>"; // End contact block
+            }
+            document.getElementById("contacts__list").innerHTML = text;
         };
         xhr.send(jsonPayload);
     } catch (err) {
@@ -361,10 +407,22 @@ function save_row(no) {
     xhr.setRequestHeader("Content-type", "application/json; charset=UTF-8");
     try {
         xhr.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                console.log("Contact has been updated");
-                loadContacts();
+            if (this.readyState != 4) return;
+
+            if (this.status != 200) {
+                if (this.status == 401) {
+                    console.log("Unauthorized - session expired, redirecting to login");
+                    clearAuth();
+                } else if (this.status == 403) {
+                    console.log("Forbidden - access denied");
+                } else {
+                    console.log("Update contact failed with status: " + this.status);
+                }
+                return;
             }
+
+            console.log("Contact has been updated");
+            loadContacts();
         };
         xhr.send(jsonPayload);
     } catch (err) {
@@ -395,11 +453,20 @@ function delete_row(no) {
         xhr.setRequestHeader("Content-type", "application/json; charset=UTF-8");
         try {
             xhr.onreadystatechange = function () {
-                if (this.readyState == 4 && this.status == 200) {
+                if (this.readyState != 4) return;
 
-                    console.log("Contact has been deleted");
-                    loadContacts();
+                if (this.status != 200) {
+                    if (this.status == 401) {
+                        console.log("Unauthorized - session expired, redirecting to login");
+                        clearAuth();
+                    } else {
+                        console.log("Delete contact failed with status: " + this.status);
+                    }
+                    return;
                 }
+
+                console.log("Contact has been deleted");
+                loadContacts();
             };
             xhr.send(jsonPayload);
         } catch (err) {
@@ -454,38 +521,48 @@ function searchContacts() {
 
     try {
         xhr.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                let jsonObject = JSON.parse(xhr.responseText);
+            if (this.readyState != 4) return;
 
-                if (jsonObject.error) {
-                    console.log(jsonObject.error);
-                    document.getElementById("contacts__list").innerHTML = "";
-                    return;
+            if (this.status != 200) {
+                if (this.status == 401) {
+                    console.log("Unauthorized - session expired, redirecting to login");
+                    clearAuth();
+                } else {
+                    console.log("Search contacts failed with status: " + this.status);
                 }
-
-                let text = ""; // We'll add blocks instead of table rows
-                for (let i = 0; i < jsonObject.results.length; i++) {
-                    ids[i] = jsonObject.results[i].ID;
-
-                    text += "<div class='contact__item' id='block" + i + "'>";
-                        text += "<div class='first__rows'>";
-                            text += "<div class='first-rows__name'>";
-                                text += "<span id='first_Name" + i + "'>" + jsonObject.results[i].FirstName + "</span>";
-                                text += "<span id='last_Name" + i + "'>" + jsonObject.results[i].LastName + "</span>";
-                            text += "</div>";
-                            text += "<div class='first-rows__btn'>";
-                                text += "<button type='button' id='edit_button" + i + "' class='btn-edit' onclick='edit_row(" + i + ")'>Edit</button>";
-                                text += "<button type='button' id='save_button" + i + "' class='btn-save' onclick='save_row(" + i + ")' style='display: none'>Save</button>";
-                                text += "<button type='button' id='delete_button" + i + "' class='btn-delete' onclick='delete_row(" + i + ")'>Delete</button>";
-                            text += "</div>";
-                        text += "</div>";
-
-                        text += "<p class='contacts__phone'><strong>Phone: </strong> <span id='phone" + i + "'>" + jsonObject.results[i].Phone + "</span></p>";
-                        text += "<p class='contacts__email'><strong>Email: </strong> <span id='email" + i + "'>" + jsonObject.results[i].Email + "</span></p>";
-                    text += "</div>"; // End contact block
-                }
-                document.getElementById("contacts__list").innerHTML = text;
+                return;
             }
+
+            let jsonObject = JSON.parse(xhr.responseText);
+
+            if (jsonObject.error) {
+                console.log(jsonObject.error);
+                document.getElementById("contacts__list").innerHTML = "";
+                return;
+            }
+
+            let text = ""; // We'll add blocks instead of table rows
+            for (let i = 0; i < jsonObject.results.length; i++) {
+                ids[i] = jsonObject.results[i].ID;
+
+                text += "<div class='contact__item' id='block" + i + "'>";
+                    text += "<div class='first__rows'>";
+                        text += "<div class='first-rows__name'>";
+                            text += "<span id='first_Name" + i + "'>" + jsonObject.results[i].FirstName + "</span>";
+                            text += "<span id='last_Name" + i + "'>" + jsonObject.results[i].LastName + "</span>";
+                        text += "</div>";
+                        text += "<div class='first-rows__btn'>";
+                            text += "<button type='button' id='edit_button" + i + "' class='btn-edit' onclick='edit_row(" + i + ")'>Edit</button>";
+                            text += "<button type='button' id='save_button" + i + "' class='btn-save' onclick='save_row(" + i + ")' style='display: none'>Save</button>";
+                            text += "<button type='button' id='delete_button" + i + "' class='btn-delete' onclick='delete_row(" + i + ")'>Delete</button>";
+                        text += "</div>";
+                    text += "</div>";
+
+                    text += "<p class='contacts__phone'><strong>Phone: </strong> <span id='phone" + i + "'>" + jsonObject.results[i].Phone + "</span></p>";
+                    text += "<p class='contacts__email'><strong>Email: </strong> <span id='email" + i + "'>" + jsonObject.results[i].Email + "</span></p>";
+                text += "</div>"; // End contact block
+            }
+            document.getElementById("contacts__list").innerHTML = text;
         };
         xhr.send(jsonPayload);
     } catch (err) {

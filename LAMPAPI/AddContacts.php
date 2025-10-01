@@ -2,13 +2,21 @@
 	require_once 'utils.php';
 	require_once 'db_connect.php';
 
+	session_start();
+	if (!isset($_SESSION['userId'])) {
+		http_response_code(401);
+		error_log("Unauthorized access attempt to AddContacts from IP: " . $_SERVER['REMOTE_ADDR']);
+		returnWithError("Unauthorized access");
+		exit;
+	}
+
 	$inData = getRequestInfo();
 
 	$firstName = $inData["firstName"];
 	$lastName = $inData["lastName"];
 	$phoneNumber = $inData["phoneNumber"];
 	$emailAddress = $inData["emailAddress"];
-	$userId = $inData["userId"];
+	$userId = $_SESSION['userId'];
 
 	$stmt = $conn->prepare("INSERT into Contacts (FirstName, LastName, Phone, Email, UserID) VALUES(?,?,?,?,?)");
 	$stmt->bind_param("ssssi", $firstName, $lastName, $phoneNumber, $emailAddress, $userId);
