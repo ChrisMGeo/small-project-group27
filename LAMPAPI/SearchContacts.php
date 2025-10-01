@@ -7,6 +7,7 @@
 		http_response_code(401);
 		error_log("Unauthorized access attempt to SearchContacts from IP: " . $_SERVER['REMOTE_ADDR']);
 		returnWithError("Unauthorized access");
+		$conn->close();
 		exit;
 	}
 

@@ -7,6 +7,7 @@
     	http_response_code(401);
     	error_log("Unauthorized access attempt to DeleteContacts from IP: " . $_SERVER['REMOTE_ADDR']);
     	returnWithError("Unauthorized access");
+        $conn->close();
     	exit;
     }
 
@@ -25,10 +26,14 @@
     		http_response_code(403);
     		error_log("Forbidden access attempt to delete contact ID $contactId from IP: " . $_SERVER['REMOTE_ADDR']);
     		returnWithError("Forbidden: Contact does not belong to user");
+            $verifyStmt->close();
+            $conn->close();
     		exit;
     	}
     } else {
     	returnWithError("Contact not found");
+        $verifyStmt->close();
+        $conn->close();
     	exit;
     }
     $verifyStmt->close();
