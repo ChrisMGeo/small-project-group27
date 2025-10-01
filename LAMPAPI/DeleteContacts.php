@@ -12,12 +12,29 @@
 
     $inData = getRequestInfo();
    
+    $contactId = $inData["contactId"];
     $userId = $_SESSION['userId'];
-    $firstName = $inData["firstName"];
-    $lastName = $inData["lastName"];
+   
+    // Verify the contact belongs to the user
+    $verifyStmt = $conn->prepare("SELECT UserID FROM Contacts WHERE ID = ?");
+    $verifyStmt->bind_param("i", $contactId);
+    $verifyStmt->execute();
+    $verifyResult = $verifyStmt->get_result();
+    if ($verifyRow = $verifyResult->fetch_assoc()) {
+    	if ($verifyRow['UserID'] != $userId) {
+    		http_response_code(403);
+    		error_log("Forbidden access attempt to delete contact ID $contactId from IP: " . $_SERVER['REMOTE_ADDR']);
+    		returnWithError("Forbidden: Contact does not belong to user");
+    		exit;
+    	}
+    } else {
+    	returnWithError("Contact not found");
+    	exit;
+    }
+    $verifyStmt->close();
 
-    $stmt = $conn->prepare("DELETE FROM Contacts WHERE FirstName = ? AND LastName = ? AND UserID = ?");
-    $stmt->bind_param("ssi", $firstName, $lastName, $userId);
+    $stmt = $conn->prepare("DELETE FROM Contacts WHERE ID = ? AND UserID = ?");
+    $stmt->bind_param("ii", $contactId, $userId);
     if ($stmt->execute()) {
         returnWithMessage("Successfully deleted contact");
     } else {

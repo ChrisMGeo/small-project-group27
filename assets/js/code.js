@@ -439,9 +439,7 @@ function delete_row(no) {
     if (check === true) {
         document.getElementById("block" + no + "").outerHTML = "";
         let tmp = {
-            firstName: nameOne,
-            lastName: nameTwo,
-            userId: userId
+            contactId: ids[no]
         };
 
         let jsonPayload = JSON.stringify(tmp);
