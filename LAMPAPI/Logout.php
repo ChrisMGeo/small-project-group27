@@ -8,7 +8,6 @@ if (isset($_SESSION['userId'])) {
     session_destroy();
     returnWithMessage("Logged out successfully");
 } else {
-    http_response_code(401);
-    returnWithError("No active session");
+    returnWithError(["error" => "No active session"], 401);
 }
 ?>

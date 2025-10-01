@@ -4,9 +4,8 @@
 
 	session_start();
 	if (!isset($_SESSION['userId'])) {
-		http_response_code(401);
 		error_log("Unauthorized access attempt to SearchContacts from IP: " . $_SERVER['REMOTE_ADDR']);
-		returnWithError("Unauthorized access");
+		returnWithError(["error" => "Unauthorized access"], 401);
 		$conn->close();
 		exit;
 	}
@@ -14,7 +13,6 @@
 	$inData = getRequestInfo();
 
 	$searchResults = [];
-	$searchCount = 0;
 
 	$stmt = $conn->prepare("SELECT FirstName, LastName, Phone, Email, UserID, ID FROM Contacts WHERE (FirstName like ? OR LastName like?) AND UserID=?");
 	$searchTerm = "%" . $inData["search"] . "%";
@@ -26,18 +24,9 @@
 	while($row = $result->fetch_assoc())
 	{
 		$searchResults[] = $row;
-		$searchCount++;
 	}
-
-	if( $searchCount == 0 )
-	{
-		returnWithError( "No Records Found" );
-	}
-	else
-	{
-		$data = ["results" => $searchResults];
-		returnWithInfo( $data );
-	}
+	$data = ["results" => $searchResults];
+	returnWithInfo( $data );
 
 	$stmt->close();
 	$conn->close();

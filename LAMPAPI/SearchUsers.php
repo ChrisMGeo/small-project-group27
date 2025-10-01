@@ -23,7 +23,7 @@
 	}
 	else
 	{
-		returnWithError( "Login has been taken" );
+		returnWithError( ["error" => "Login has been taken"], 409 );
 	}
 
 	$stmt->close();

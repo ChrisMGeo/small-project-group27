@@ -4,9 +4,8 @@
 
 	session_start();
 	if (!isset($_SESSION['userId'])) {
-		http_response_code(401);
 		error_log("Unauthorized access attempt to AddContacts from IP: " . $_SERVER['REMOTE_ADDR']);
-		returnWithError("Unauthorized access");
+		returnWithError(["error" => "Unauthorized access"], 401);
 		$conn->close();
 		exit;
 	}
@@ -24,7 +23,7 @@
 	if ($stmt->execute()) {
 		returnWithMessage("Successfully added contact");
 	} else {
-		returnWithError("Failed to insert contact: " . $stmt->error);
+		returnWithError(["error" => "Failed to insert contact: " . $stmt->error]);
 	}
 	$stmt->close();
 	$conn->close();

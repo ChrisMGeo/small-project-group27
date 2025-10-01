@@ -4,9 +4,8 @@
    
     session_start();
     if (!isset($_SESSION['userId'])) {
-    	http_response_code(401);
     	error_log("Unauthorized access attempt to DeleteContacts from IP: " . $_SERVER['REMOTE_ADDR']);
-    	returnWithError("Unauthorized access");
+    	returnWithError(["error" => "Unauthorized access"], 401);
         $conn->close();
     	exit;
     }
@@ -23,15 +22,14 @@
     $verifyResult = $verifyStmt->get_result();
     if ($verifyRow = $verifyResult->fetch_assoc()) {
     	if ($verifyRow['UserID'] != $userId) {
-    		http_response_code(403);
     		error_log("Forbidden access attempt to delete contact ID $contactId from IP: " . $_SERVER['REMOTE_ADDR']);
-    		returnWithError("Forbidden: Contact does not belong to user");
+    		returnWithError(["error" => "Forbidden: Contact does not belong to user"], 403);
             $verifyStmt->close();
             $conn->close();
     		exit;
     	}
     } else {
-    	returnWithError("Contact not found");
+    	returnWithError(["error" => "Contact not found"], 404);
         $verifyStmt->close();
         $conn->close();
     	exit;
@@ -43,7 +41,7 @@
     if ($stmt->execute()) {
         returnWithMessage("Successfully deleted contact");
     } else {
-        returnWithError("Failed to delete contact: " . $stmt->error);
+        returnWithError(["error" => "Failed to delete contact: " . $stmt->error]);
     }
     $stmt->close();
     $conn->close();

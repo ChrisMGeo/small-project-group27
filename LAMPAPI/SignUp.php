@@ -29,13 +29,13 @@
 				returnWithInfo($data);
 			} else {
 				// Error occurred
-				returnWithError("Failed to create user: " . $stmt->error);
+				returnWithError(["error" => "Failed to create user: " . $stmt->error]);
 			}
 		} else {
-			returnWithError("There already exists a user with the same login");
+			returnWithError(["error" => "There already exists a user with the same login"], 409);
 		}
 	} else {
-		returnWithError("Failed to search for any existing users with same login: " . $stmt->error);
+		returnWithError(["error" => "Failed to search for any existing users with same login: " . $stmt->error]);
 	}
 
 	$stmt->close();

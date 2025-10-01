@@ -4,9 +4,8 @@
 
 	session_start();
 	if (!isset($_SESSION['userId'])) {
-		http_response_code(401);
 		error_log("Unauthorized access attempt to UpdateContacts from IP: " . $_SERVER['REMOTE_ADDR']);
-		returnWithError("Unauthorized access");
+		returnWithError(["error" => "Unauthorized access"], 401);
 		$conn->close();
 		exit;
 	}
@@ -26,15 +25,14 @@
 	$verifyResult = $verifyStmt->get_result();
 	if ($verifyRow = $verifyResult->fetch_assoc()) {
 		if ($verifyRow['UserID'] != $_SESSION['userId']) {
-			http_response_code(403);
 			error_log("Forbidden access attempt to update contact ID $id from IP: " . $_SERVER['REMOTE_ADDR']);
-			returnWithError("Forbidden: Contact does not belong to user");
+			returnWithError(["error" => "Forbidden: Contact does not belong to user"], 403);
 			$verifyStmt->close();
 			$conn->close();
 			exit;
 		}
 	} else {
-		returnWithError("Contact not found");
+		returnWithError(["error" => "Contact not found"], 404);
 		$verifyStmt->close();
 		$conn->close();
 		exit;
@@ -46,7 +44,7 @@
 	if ($stmt->execute()) {
 		returnWithMessage("Successfully updated contact");
 	} else {
-		returnWithError("Failed to update contact: " . $stmt->error);
+		returnWithError(["error" => "Failed to update contact: " . $stmt->error]);
 	}
 
 	$stmt->close();

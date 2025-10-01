@@ -27,7 +27,7 @@
 	}
 	else
 	{
-		returnWithError("No Records Found");
+		returnWithError(["error" => "No Records Found"], 401);
 	}
 
 	$stmt->close();
